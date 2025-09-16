@@ -1,0 +1,22 @@
+experiments:
+- algorithm: relaxation_walk
+  experiment:
+    random_seed: 42
+    time_limit: 1800
+  network:
+    input_size: 10
+    layer_num: 2
+    layer_size: 20
+  params:
+    pick_bias: 0.01
+    walk_eps: 0.1
+- algorithm: dynamic_walk
+  experiment:
+    random_seed: 123
+    time_limit: 1800
+  network:
+    input_size: 10
+    layer_num: 2
+    layer_size: 20
+  params:
+    walk_eps: 0.1

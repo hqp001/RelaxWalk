@@ -1,0 +1,11 @@
+algorithm: dynamic_walk
+experiment:
+  output_dir: results
+  random_seed: 42
+  time_limit: 3600
+network:
+  input_size: 10
+  layer_num: 2
+  layer_size: 20
+params:
+  walk_eps: 0.1

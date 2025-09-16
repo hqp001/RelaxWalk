@@ -1,0 +1,15 @@
+2025-09-16 12:19:50 [INFO] main:76 - [run_single_experiment] Starting experiment algorithm=relaxation_walk | network_size=5→10×1→1 | walk_eps=0.1 | pick_bias=0.01 | random_seed=42 | time_limit=30
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [run_relaxation_walk] Starting Relaxation Walk algorithm input_size=5 | layer_num=1 | layer_size=10 | walk_eps=0.1 | pick_bias=0.01 | seed=42 | time_limit=30
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [__exit__] [run_algorithm_with_yaml_config] Completed network creation | duration=0.001s
+2025-09-16 12:19:50 [INFO] relaxation_solver:76 - [__exit__] [run_relaxation_walk] Completed Gurobi model setup | duration=0.002s
+2025-09-16 12:19:50 [INFO] relaxation_solver:76 - [__exit__] [run_relaxation_walk] Completed Gurobi optimization | duration=0.003s
+2025-09-16 12:19:50 [INFO] workflows.relaxation_solver:76 - [__exit__] [run_algorithm_with_yaml_config] Completed linear relaxation solve | duration=0.007s
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [__exit__] [run_single_experiment] Completed linear relaxation solution | duration=0.008s
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [__exit__] [run_single_experiment] Completed binary activation computation | duration=0.001s
+2025-09-16 12:19:50 [INFO] walk_optimizer:76 - [__exit__] [run_algorithm_with_yaml_config] Completed initial LP solve | duration=0.001s
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [__exit__] [run_single_experiment] Completed initial gradient walk | duration=0.003s
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [run_relaxation_walk] Initial walk completed first_objective=0.26369613326741487
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [run_relaxation_walk] Relaxation Walk completed execution_time=0.03s | total_starts=1 | improvements=0 | final_objective=0.26369613326741487
+2025-09-16 12:19:50 [INFO] algorithm_runners:76 - [run_algorithm_with_yaml_config] Results stored database=experiments.db | experiment_id=relaxation_walk_20250916_121950_fc3fc25d | yaml_path=results/relaxation_walk/relaxation_walk_20250916_121950_fc3fc25d_20250916_121950.yaml
+2025-09-16 12:19:50 [INFO] main:76 - [__exit__] [<module>] Completed experiment execution | algorithm=relaxation_walk | seed=42 | duration=0.049s
+2025-09-16 12:19:50 [INFO] main:76 - [run_single_experiment] Experiment completed successfully execution_time=0.03s | best_objective=0.26369613326741487 | first_objective=0.26369613326741487 | total_starts=1 | valid_starts=1 | updates=1

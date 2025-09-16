@@ -1,0 +1,15 @@
+2025-09-16 12:18:03 [INFO] main.run_single_experiment:52 - Starting experiment algorithm=relaxation_walk | network_size=5→10×1→1 | walk_eps=0.1 | pick_bias=0.01 | random_seed=42 | time_limit=30
+2025-09-16 12:18:03 [INFO] algorithm_runners.run_relaxation_walk:37 - Starting Relaxation Walk algorithm input_size=5 | layer_num=1 | layer_size=10 | walk_eps=0.1 | pick_bias=0.01 | seed=42 | time_limit=30
+2025-09-16 12:18:03 [INFO] algorithm_runners.__exit__:109 - Completed network creation | duration=0.001s stacklevel=3
+2025-09-16 12:18:03 [INFO] relaxation_solver.__exit__:109 - Completed Gurobi model setup | duration=0.002s stacklevel=3
+2025-09-16 12:18:03 [INFO] relaxation_solver.__exit__:109 - Completed Gurobi optimization | duration=0.004s stacklevel=3
+2025-09-16 12:18:03 [INFO] workflows.relaxation_solver.__exit__:109 - Completed linear relaxation solve | duration=0.008s stacklevel=3
+2025-09-16 12:18:03 [INFO] algorithm_runners.__exit__:109 - Completed linear relaxation solution | duration=0.008s stacklevel=3
+2025-09-16 12:18:03 [INFO] algorithm_runners.__exit__:109 - Completed binary activation computation | duration=0.001s stacklevel=3
+2025-09-16 12:18:03 [INFO] walk_optimizer.__exit__:109 - Completed initial LP solve | duration=0.001s stacklevel=3
+2025-09-16 12:18:03 [INFO] algorithm_runners.__exit__:109 - Completed initial gradient walk | duration=0.003s stacklevel=3
+2025-09-16 12:18:03 [INFO] algorithm_runners.run_relaxation_walk:73 - Initial walk completed first_objective=0.26369613326741487
+2025-09-16 12:18:03 [INFO] algorithm_runners.run_relaxation_walk:153 - Relaxation Walk completed execution_time=0.03s | total_starts=1 | improvements=0 | final_objective=0.26369613326741487
+2025-09-16 12:18:03 [INFO] algorithm_runners.run_algorithm_with_yaml_config:386 - Results stored database=experiments.db | experiment_id=relaxation_walk_20250916_121803_7777f246 | yaml_path=results/relaxation_walk/relaxation_walk_20250916_121803_7777f246_20250916_121803.yaml
+2025-09-16 12:18:03 [INFO] main.__exit__:109 - Completed experiment execution | algorithm=relaxation_walk | seed=42 | duration=0.050s stacklevel=3
+2025-09-16 12:18:03 [INFO] main.run_single_experiment:68 - Experiment completed successfully execution_time=0.03s | best_objective=0.26369613326741487 | first_objective=0.26369613326741487 | total_starts=1 | valid_starts=1 | updates=1

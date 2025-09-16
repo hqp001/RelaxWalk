@@ -1,0 +1,59 @@
+experiment:
+  id: dynamic_walk_20250916_112147_3908c83e
+  timestamp: '2025-09-16T11:21:47.986723'
+  algorithm: dynamic_walk
+  status: completed
+configuration:
+  network:
+    input_size: 10
+    layer_num: 2
+    layer_size: 20
+    architecture: "10\u219220\xD72\u21921"
+  algorithm_params:
+    walk_eps: 0.1
+  experiment_params:
+    random_seed: 42
+    time_limit: 3600
+results:
+  execution_time: 0.4348783493041992
+  best_objective: -0.050150529835126745
+  first_objective: -0.050150529835126745
+  improvement: 0.0
+  exploration:
+    total_starts: 2
+    valid_starts: 2
+    efficiency: 1.0
+  improvement_percent: 0.0
+  best_input:
+  - 0.4278097542472453
+  - 0.0
+  - 1.0
+  - 1.0
+  - 0.7852586362771602
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+performance:
+  convergence_steps: 1
+  time_per_start: 0.2174391746520996
+  starts_per_second: 4.598987287364338
+convergence:
+  total_improvements: 1
+  initial_objective: -0.050150529835126745
+  final_objective: -0.050150529835126745
+  best_objective: -0.050150529835126745
+  convergence_timeline:
+  - step: 1
+    objective: -0.050150529835126745
+    time: 0.16124582290649414
+    cumulative_starts: 1
+environment:
+  python_version: 3.9.23
+  platform: Linux
+  hostname: hqp001-MS-7C91
+  pytorch_version: !!python/object/new:torch.torch_version.TorchVersion
+  - 2.8.0+cu128
+  gurobi_version: 12.0.3
+  numpy_version: 2.0.2

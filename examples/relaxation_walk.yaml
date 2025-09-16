@@ -1,0 +1,12 @@
+algorithm: relaxation_walk
+experiment:
+  output_dir: results
+  random_seed: 42
+  time_limit: 30
+network:
+  input_size: 5
+  layer_num: 1
+  layer_size: 10
+params:
+  pick_bias: 0.01
+  walk_eps: 0.1

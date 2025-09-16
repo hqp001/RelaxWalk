@@ -1,0 +1,55 @@
+experiment:
+  id: relaxation_walk_20250916_121529_791ff015
+  timestamp: '2025-09-16T12:15:29.815878'
+  algorithm: relaxation_walk
+  status: completed
+configuration:
+  network:
+    input_size: 5
+    layer_num: 1
+    layer_size: 10
+    architecture: "5\u219210\xD71\u21921"
+  algorithm_params:
+    walk_eps: 0.1
+    pick_bias: 0.01
+  experiment_params:
+    random_seed: 42
+    time_limit: 30
+results:
+  execution_time: 0.027851104736328125
+  best_objective: 0.26369613326741487
+  first_objective: 0.26369613326741487
+  improvement: 0.0
+  exploration:
+    total_starts: 1
+    valid_starts: 1
+    efficiency: 1.0
+  improvement_percent: 0.0
+  best_input:
+  - 1.0
+  - 0.0
+  - 0.3142777201971414
+  - 0.0
+  - 0.0
+performance:
+  convergence_steps: 1
+  time_per_start: 0.027851104736328125
+  starts_per_second: 35.905218463224216
+convergence:
+  total_improvements: 1
+  initial_objective: 0.26369613326741487
+  final_objective: 0.26369613326741487
+  best_objective: 0.26369613326741487
+  convergence_timeline:
+  - step: 1
+    objective: 0.26369613326741487
+    time: 0.011531591415405273
+    cumulative_starts: 1
+environment:
+  python_version: 3.9.23
+  platform: Linux
+  hostname: hqp001-MS-7C91
+  pytorch_version: !!python/object/new:torch.torch_version.TorchVersion
+  - 2.8.0+cu128
+  gurobi_version: 12.0.3
+  numpy_version: 2.0.2
