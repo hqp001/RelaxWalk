@@ -1,0 +1,15 @@
+experiment:
+  name: "relaxation_walk_test"
+  method: "RW"
+
+network:
+  input_size: 10
+  layer_num: 3
+  layer_size: 20
+  pruned_density: 1.0  # Fraction of weights to keep (0.0-1.0), 1.0 means no pruning
+
+algorithm:
+  walk_eps: 0.5
+  pick_bias: 0.05
+  random_seed: 42
+  timelimit: 100

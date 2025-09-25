@@ -1,4 +1,5 @@
-from util import *
+# REFACTORED: Using utils module for imports
+from utils import get_binary_activations, get_linear_relaxation_with_restriction
 
 
 def find_new_relaxation_point_random(model_nn, x, pick, dif_index):

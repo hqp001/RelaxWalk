@@ -3,6 +3,9 @@ import random
 import torch
 import torch.nn as nn
 from torch import relu, sigmoid, tanh, selu
+from configs.log_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class Network(nn.Module):
@@ -10,6 +13,7 @@ class Network(nn.Module):
     def __init__(self, in_size, layer_dims, seed=42):
         # in_size = dimensions of the input
         # layer_dims = dimensions of the output
+        logger.info(f"Initializing Network with in_size={in_size}, layer_dims={layer_dims}, seed={seed}")
 
         random.seed(seed)
         np.random.seed(seed)
@@ -19,8 +23,9 @@ class Network(nn.Module):
         super(Network, self).__init__()
 
         self.layer_dims = layer_dims
-
         self.in_size = in_size
+        self._max = -float('inf')
+        self._x_max = None
 
         self.linears = nn.ModuleList()
         self.linears.append(nn.Linear(in_size, layer_dims[0]))
@@ -39,6 +44,7 @@ class Network(nn.Module):
 
     def forward(self, x):
         # x - input tensor
+        input_x = x.clone() if isinstance(x, torch.Tensor) else torch.FloatTensor(x)
         x = x.type(torch.FloatTensor)
         # convert into a float tensor
         x = x.reshape(-1, self.in_size)
@@ -63,6 +69,12 @@ class Network(nn.Module):
                 # relu activation
             # now to keep track of the neurons
             self.neurons[f'Hidden Layer {index + 1} Neurons:'] = x
+
+        # Update maximum tracking
+        output_val = x.item() if x.numel() == 1 else x.max().item()
+        if output_val > self._max:
+            self._max = output_val
+            self._x_max = input_x.flatten().tolist() if isinstance(input_x, torch.Tensor) else list(input_x)
 
         return x
         # return the output

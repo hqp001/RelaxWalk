@@ -1,0 +1,13 @@
+algorithm:
+  pick_bias: 0.05
+  random_seed: 1
+  timelimit: 100
+  walk_eps: 0.5
+experiment:
+  method: RW
+  name: exp_0002
+network:
+  input_size: 10
+  layer_num: 2
+  layer_size: 20
+  pruned_density: 0.8
