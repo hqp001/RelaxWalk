@@ -4,14 +4,14 @@ import yaml
 import os
 
 # Fixed values
-input_size = 20
-walk_eps = 0.1
-pick_bias = 0.01
-timelimit = 100
+input_size = 1024
+walk_eps = 0.5
+pick_bias = 0.05
+timelimit = 200
 
 # Variable values (small batch for testing)
-layer_nums = [2, 3, 4]
-layer_sizes = [10, 20]
+layer_nums = [5, 6, 7]
+layer_sizes = [512, 1024]
 seeds = [1, 2, 3, 4, 5]
 pruned_densities = [0.3, 0.5, 0.8, 1.0]
 
