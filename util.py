@@ -60,7 +60,6 @@ def get_linear_relaxation(modelnn, time_limit):
     b = modelnn.get_bias_matrix()
     layer_dims = modelnn.layer_dims
     in_size = modelnn.in_size
-
     model = gb.Model()
     global x_vals
     global z_vals
