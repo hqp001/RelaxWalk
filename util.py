@@ -368,7 +368,7 @@ def get_binary_activations(model_nn, x):
     else:
         x = torch.Tensor(x)
     model_nn.forward(x)
-    binary_activations = {key: (value > 0).float() for key, value in model_nn.neurons.items()}
+    binary_activations = {key: (value > 0).float() for key, value in model_nn.get_neurons().items()}
     activation_list = []
     for key, tensor in binary_activations.items():
         activation_list.append(tensor.numpy().tolist()[0])

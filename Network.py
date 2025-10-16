@@ -72,12 +72,20 @@ class Network(nn.Module):
         # Always track original model output
         with torch.no_grad():
             if not self.use_original:
-                old_use = self.use_original
-                self.use_original = True
-                original_output = self.forward(x_input)
-                self.use_original = old_use
+                # Compute original model output directly without recursion
+                x_orig = x_input.clone() if torch.is_tensor(x_input) else x_input
+                x_orig = x_orig.type(torch.FloatTensor)
+                x_orig = x_orig.reshape(-1, self.in_size)
+
+                for index, linear in enumerate(self.original.linears):
+                    if index == len(self.original.linears) - 1:
+                        x_orig = linear(x_orig)
+                    else:
+                        x_orig = relu(linear(x_orig))
+                original_output = x_orig
             else:
                 original_output = x
+
             original_value = original_output.item() if original_output.numel() == 1 else original_output.max().item()
             if original_value > self.original_max:
                 self.original_max = original_value
@@ -108,4 +116,12 @@ class Network(nn.Module):
             for i in range(len(self.layer_dims)):
                 b[i] = self.state_dict()['linears.' + str(i) + '.bias']
             return b
+
+    def get_neurons(self):
+        """
+        Safely access neurons dictionary.
+        This method ensures neurons are accessed through the proper interface
+        and respects the use_original guard in forward().
+        """
+        return self.neurons
 

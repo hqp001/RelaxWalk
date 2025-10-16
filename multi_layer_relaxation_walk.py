@@ -175,7 +175,7 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'seed': random_seed,
             'prune_amount': prune_amount,
             'x_max': x_max,
-            'max_': model_nn(torch.FloatTensor(x_max)).item(),
+            'max_': model_nn.forward(torch.FloatTensor(x_max)).item(),
             'first_max': first_max,
             'time_count': time_count,
             'start_count': start_count,
