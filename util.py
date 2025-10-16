@@ -342,7 +342,7 @@ def solve_lp_pre_calc(modelnn, activation_pattern):
     # model.setParam('Method', 1)
     model.optimize()
 
-    # print("status: ", model.status)
+    print("status: ", model.status)
     # model.computeIIS()
     # model.write("model.ilp")
 
