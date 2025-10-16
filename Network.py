@@ -3,11 +3,12 @@ import random
 import torch
 import torch.nn as nn
 from torch import relu, sigmoid, tanh, selu
+import torch.nn.utils.prune as prune
 
 
 class Network(nn.Module):
 
-    def __init__(self, in_size, layer_dims, seed=42):
+    def __init__(self, in_size, layer_dims, seed=42, prune_amount=0.2):
         # in_size = dimensions of the input
         # layer_dims = dimensions of the output
 
@@ -36,6 +37,8 @@ class Network(nn.Module):
             self.neurons[f'Hidden Layer {index} Neurons:'] = None
             # will eventually contain the tensor for all the neurons of that hidden layer post activation
             # a different set of neurons per sample input
+
+        self.pruned = self.apply_pruning(prune_amount)
 
     def forward(self, x):
         # x - input tensor
@@ -78,3 +81,12 @@ class Network(nn.Module):
         for i in range(len(self.layer_dims)):
             b[i] = self.state_dict()['linears.' + str(i) + '.bias']
         return b
+
+    def apply_pruning(self, amount=0.2):
+        # Create a deep copy and prune it permanently
+        import copy
+        pruned_model = copy.deepcopy(self)
+        for layer in pruned_model.linears:
+            prune.l1_unstructured(layer, name='weight', amount=amount)
+            prune.remove(layer, 'weight')
+        return pruned_model

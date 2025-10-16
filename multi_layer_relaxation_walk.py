@@ -1,6 +1,18 @@
-from walk import *
-from io_csv import *
-from dynamic_new_point import *
+from walk import single_walk_with_timelimit
+from io_csv import store_data
+from util import (
+    get_binary_activations,
+    get_linear_relaxation,
+    get_linear_relaxation_with_restriction,
+    get_prob_list_with_bias,
+    get_index_from_prob_list,
+    solve_lp_pre_calc,
+    update_x
+)
+from Network import Network
+import numpy as np
+import torch
+import time
 
 def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_eps, pick_bias, timelimit):
     seed = random_seed
