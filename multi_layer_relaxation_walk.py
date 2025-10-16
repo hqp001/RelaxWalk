@@ -119,14 +119,15 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
 
 
     time_count = time.time() - start
-    # store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, x_max, max_, first_max, time_count,
-    #              start_count, valid_start_count, update_list]], f'RW_experiment_result_{timelimit}.csv')
-    if max_ is None:
-        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, prune_amount, x_max,
+    original_max = model_nn.original_max
+    original_x_max = model_nn.original_x_max
+
+    if max_ is None or x_max is None:
+        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias, prune_amount], random_seed, x_max,
                      None, first_max, time_count,
-                     start_count, valid_start_count, model_nn.original_max, update_list]], f'RW_experiment_result_{timelimit}.csv')
+                     start_count, valid_start_count, update_list, original_max, original_x_max]], f'RW_experiment_result_{timelimit}.csv')
     else:
-        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, prune_amount, x_max, model_nn(torch.FloatTensor(x_max)).item(), first_max, time_count,
-                     start_count, valid_start_count, model_nn.original_max, update_list]], f'RW_experiment_result_{timelimit}.csv')
+        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias, prune_amount], random_seed, x_max, model_nn(torch.FloatTensor(x_max)).item(), first_max, time_count,
+                     start_count, valid_start_count, update_list, original_max, original_x_max]], f'RW_experiment_result_{timelimit}.csv')
     return x_max, max_, first_max, time_count, start_count, valid_start_count, update_list
 

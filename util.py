@@ -128,6 +128,10 @@ def get_linear_relaxation(modelnn, time_limit):
     if model.status == 9:
         return None, None
 
+    # Check if callback populated z_vals
+    if not z_vals or len(z_vals) == 0:
+        return None, None
+
     z_vals = gbdict2lst_z(z_vals, layer_dims)
 
     # Update original_max by passing x through the network

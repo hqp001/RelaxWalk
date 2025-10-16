@@ -13,7 +13,7 @@ def single_walk_with_timelimit(model_nn, x, eps, timelimit):
     step_count = 0
     ap = get_binary_activations(model_nn, x)
     max_lp, x_new = solve_lp_pre_calc(model_nn, ap)
-    while max_lp > max_:
+    while max_lp is not None and max_lp > max_:
         # print(max_lp)
         step_count += 1
         max_ = max_lp
