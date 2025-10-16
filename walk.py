@@ -5,7 +5,7 @@ from util import (
 )
 import time
 
-def single_walk_with_timelimit(model_nn, x, eps, timelimit):
+def single_walk_with_timelimit(model_nn, x, eps, timelimit, max_steps=None):
     # print(x)
     start = time.time()
     max_ = -1000
@@ -20,6 +20,8 @@ def single_walk_with_timelimit(model_nn, x, eps, timelimit):
         x_max = x_new
         now = time.time()
         if now - start >= timelimit:
+            break
+        if max_steps is not None and step_count >= max_steps:
             break
         x = update_x(model_nn, x, x_new, eps)
         ap = get_binary_activations(model_nn, x)
