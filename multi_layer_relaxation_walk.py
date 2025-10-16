@@ -14,13 +14,16 @@ import numpy as np
 import torch
 import time
 
-def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_eps, pick_bias, timelimit):
+def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_eps, pick_bias, timelimit, prune_amount):
     seed = random_seed
     eps = walk_eps
     bias = pick_bias
 
     layer_dims = layer_num * [layer_size] + [1]
-    model_nn = Network(in_size=input_size, layer_dims=layer_dims, seed=seed)
+
+    model_nn = Network(in_size=input_size, layer_dims=layer_dims, seed=seed, prune_amount=prune_amount)
+    model_nn.use_original = False # Configure to use prune model
+
     start = time.time()
     max_ = -1000
     x_max = None
@@ -30,8 +33,8 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
 
     x, frac_z = get_linear_relaxation(model_nn, timelimit)
     if x is None:
-        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, None, None, None, None, None,
-                     None, None]], f'RW_experiment_result_{timelimit}.csv')
+        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, prune_amount, None, None, None, None, None,
+                     None, None, None]], f'RW_experiment_result_{timelimit}.csv')
         return None, None, None, None, None, None, None
     int_z = get_binary_activations(model_nn, x)
     prob_list = []
@@ -44,7 +47,7 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
     step_count = 0
     ap = get_binary_activations(model_nn, x)
     max_lp, x_new = solve_lp_pre_calc(model_nn, ap)
-    while max_lp > max_:
+    while max_lp is not None and max_lp > max_:
         # print(max_lp)
         step_count += 1
         max_ = max_lp
@@ -54,6 +57,8 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
         x = update_x(model_nn, x, x_new, eps)
         ap = get_binary_activations(model_nn, x)
         max_lp, x_new = solve_lp_pre_calc(model_nn, ap)
+        if max_lp is None:
+            break
 
     first_max = max_
     record_ap = [int_z]
@@ -117,11 +122,11 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
     # store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, x_max, max_, first_max, time_count,
     #              start_count, valid_start_count, update_list]], f'RW_experiment_result_{timelimit}.csv')
     if max_ is None:
-        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, x_max,
+        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, prune_amount, x_max,
                      None, first_max, time_count,
-                     start_count, valid_start_count, update_list]], f'RW_experiment_result_{timelimit}.csv')
+                     start_count, valid_start_count, model_nn.original_max, update_list]], f'RW_experiment_result_{timelimit}.csv')
     else:
-        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, x_max, model_nn(torch.FloatTensor(x_max)).item(), first_max, time_count,
-                     start_count, valid_start_count, update_list]], f'RW_experiment_result_{timelimit}.csv')
+        store_data([['RW', [input_size] + layer_dims, [walk_eps, pick_bias], random_seed, prune_amount, x_max, model_nn(torch.FloatTensor(x_max)).item(), first_max, time_count,
+                     start_count, valid_start_count, model_nn.original_max, update_list]], f'RW_experiment_result_{timelimit}.csv')
     return x_max, max_, first_max, time_count, start_count, valid_start_count, update_list
 

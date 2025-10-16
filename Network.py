@@ -38,55 +38,74 @@ class Network(nn.Module):
             # will eventually contain the tensor for all the neurons of that hidden layer post activation
             # a different set of neurons per sample input
 
-        self.pruned = self.apply_pruning(prune_amount)
+        # Store original model before pruning
+        import copy
+        self.original = copy.deepcopy(self)
+
+        # Apply pruning permanently to self
+        for layer in self.linears:
+            prune.l1_unstructured(layer, name='weight', amount=prune_amount)
+            prune.remove(layer, 'weight')
+
+        # Track best original model outputs
+        self.original_max = float('-inf')
+        self.original_x_max = None
+
+        # Control which model to use
+        self.use_original = False
 
     def forward(self, x):
-        # x - input tensor
+        x_input = x.clone() if torch.is_tensor(x) else x
         x = x.type(torch.FloatTensor)
-        # convert into a float tensor
         x = x.reshape(-1, self.in_size)
-        # turn the tensor into one tensor containing a bunch of inner tensors, each of dimension self.in_size
 
-        for index, linear in enumerate(self.linears):
-            # go through the network
-            if index == len(self.linears) - 1:
-                # we're on the last output
-                if self.layer_dims[-1] == 1:
-                    # binary output
-                    # x = sigmoid(linear(x))
-                    x = linear(x)
-                else:
-                    # multi-class output
-                    x = linear(x)
-                    # no activation
-            # otherwise we use relu
+        # Choose which model to use
+        linears = self.original.linears if self.use_original else self.linears
+
+        for index, linear in enumerate(linears):
+            if index == len(linears) - 1:
+                x = linear(x)
             else:
-                # not on the last activation
                 x = relu(linear(x))
-                # relu activation
-            # now to keep track of the neurons
             self.neurons[f'Hidden Layer {index + 1} Neurons:'] = x
 
+        # Always track original model output
+        with torch.no_grad():
+            if not self.use_original:
+                old_use = self.use_original
+                self.use_original = True
+                original_output = self.forward(x_input)
+                self.use_original = old_use
+            else:
+                original_output = x
+            original_value = original_output.item() if original_output.numel() == 1 else original_output.max().item()
+            if original_value > self.original_max:
+                self.original_max = original_value
+                self.original_x_max = x_input if isinstance(x_input, list) else x_input.tolist()
+
         return x
-        # return the output
 
     def get_weight_matrix(self):
-        w = {}
-        for i in range(len(self.layer_dims)):
-            w[i] = self.state_dict()['linears.' + str(i) + '.weight']
-        return w
+        if self.use_original:
+            w = {}
+            for i in range(len(self.layer_dims)):
+                w[i] = self.original.state_dict()['linears.' + str(i) + '.weight']
+            return w
+        else:
+            w = {}
+            for i in range(len(self.layer_dims)):
+                w[i] = self.state_dict()['linears.' + str(i) + '.weight']
+            return w
 
     def get_bias_matrix(self):
-        b = {}
-        for i in range(len(self.layer_dims)):
-            b[i] = self.state_dict()['linears.' + str(i) + '.bias']
-        return b
+        if self.use_original:
+            b = {}
+            for i in range(len(self.layer_dims)):
+                b[i] = self.original.state_dict()['linears.' + str(i) + '.bias']
+            return b
+        else:
+            b = {}
+            for i in range(len(self.layer_dims)):
+                b[i] = self.state_dict()['linears.' + str(i) + '.bias']
+            return b
 
-    def apply_pruning(self, amount=0.2):
-        # Create a deep copy and prune it permanently
-        import copy
-        pruned_model = copy.deepcopy(self)
-        for layer in pruned_model.linears:
-            prune.l1_unstructured(layer, name='weight', amount=amount)
-            prune.remove(layer, 'weight')
-        return pruned_model

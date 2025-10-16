@@ -129,6 +129,11 @@ def get_linear_relaxation(modelnn, time_limit):
         return None, None
 
     z_vals = gbdict2lst_z(z_vals, layer_dims)
+
+    # Update original_max by passing x through the network
+    if x_vals is not None and len(x_vals) > 0:
+        modelnn.forward(torch.Tensor(list(x_vals.values())))
+
     return x_vals, z_vals
 #########################################################
 
@@ -222,6 +227,11 @@ def get_linear_relaxation_with_restriction(modelnn, activation_pattern, restrict
     sys.stdout.flush()
 
     z_vals = gbdict2lst_z(z_vals, layer_dims)
+
+    # Update original_max by passing x through the network
+    if x_vals is not None and len(x_vals) > 0:
+        modelnn.forward(torch.Tensor(list(x_vals.values())))
+
     return x_vals, z_vals
 
 
@@ -333,8 +343,18 @@ def solve_lp_pre_calc(modelnn, activation_pattern):
     # model.computeIIS()
     # model.write("model.ilp")
 
+    # Check if optimization was successful
+    if model.status != GRB.OPTIMAL:
+        # Return None if optimization failed (infeasible, unbounded, etc.)
+        return None, None
+
     max_lp = model.getAttr('ObjVal')
     x_new = gbdict2lst(x, len(x))
+
+    # Update original_max by passing x through the network
+    if x_new is not None and len(x_new) > 0:
+        modelnn.forward(torch.Tensor(x_new))
+
     return max_lp, x_new
 
 def get_binary_activations(model_nn, x):
