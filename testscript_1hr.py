@@ -7,7 +7,7 @@ seed_list = [50, 51, 52, 53, 54]
 input_size_list = [10, 100, 1000]
 layer_num_list = [1, 2, 3]
 layer_size_list = [100, 500]
-timelimit = 3600
+timelimit = 60
 
 walk_eps = 0.01
 pick_bias = 0.05
