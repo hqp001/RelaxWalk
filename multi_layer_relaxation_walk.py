@@ -123,11 +123,21 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
                     # print(f'{valid_start_count} walk start with time remain{time_remain} at {now}')
                     # Use pruned model for walking
                     model_nn.use_original = False
-                    local_x_max, local_max, step_count1, time_consuming = single_walk_with_timelimit(model_nn, x_vals, eps,
+                    pruned_x_max, pruned_max, step_count1, time_consuming = single_walk_with_timelimit(model_nn, x_vals, eps,
                                                                                                      time_remain)
-                    model_nn.use_original = True
-                    local_x_max = model_nn.original_x_max
-                    local_max = model_nn.original_max
+
+                    # Now walk on original model using pruned model's solution
+                    time_remain = timelimit - (time.time() - start)
+                    if time_remain > 0 and pruned_x_max is not None:
+                        model_nn.use_original = True
+                        local_x_max, local_max, step_count2, time_consuming2 = single_walk_with_timelimit(model_nn, pruned_x_max, eps,
+                                                                                                         time_remain)
+                    else:
+                        # No time left or pruned walk failed
+                        model_nn.use_original = True
+                        local_x_max = model_nn.original_x_max
+                        local_max = model_nn.original_max
+
                     # now = time.time() - start
                     # print(f'{valid_start_count} walk done by {now} with {step_count1} steps')
                     if local_max > max_:
