@@ -2,16 +2,17 @@ import pandas as pd
 from multi_layer_relaxation_walk import relaxation_walk_deep
 
 #seed_list = [50, 51, 52, 53, 54]
-seed_list = [50]
+seed_list = [51, 52, 53, 54]
 #input_size_list = [10, 100, 1000]
-input_size_list = [10]
-layer_num_list = [1, 2, 3]
+input_size_list = [100]
+layer_num_list = [3]
 #layer_size_list = [100, 500]
 layer_size_list = [100]
-prune_amount_list = [0.0, 0.3, 0.5, 0.8, 0.9]
-timelimit = 60
+prune_amount_list = [0.0, 0.1, 0.2, 0.3, 0.5]
+#prune_amount_list = [0.3, 0.5]
+timelimit = 120
 
-walk_eps = 0.001
+walk_eps = 0.01
 pick_bias = 0.05
 gap = 2/3
 
@@ -19,8 +20,8 @@ gap = 2/3
 for input_size in input_size_list:
     for layer_num in layer_num_list:
         for layer_size in layer_size_list:
-            for prune_amount in prune_amount_list:
-                for seed in seed_list:
+            for seed in seed_list:
+                for prune_amount in prune_amount_list:
                     try:
                         tag = str([input_size] + layer_num * [layer_size] + [1])
                         print(f'[{input_size}, {layer_num} x {layer_size}, 1] with seed {seed} prune {prune_amount} relaxation waking start')

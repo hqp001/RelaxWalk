@@ -124,19 +124,25 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
                     # Use pruned model for walking (limit to 5 steps)
                     model_nn.use_original = False
                     pruned_x_max, pruned_max, step_count1, time_consuming = single_walk_with_timelimit(model_nn, x_vals, eps,
-                                                                                                     time_remain, max_steps=5)
+                                                                                                     time_remain, max_steps=2)
+                    print("PRUNED WALK",step_count1)
+                    print("ORIGINAL MAX", model_nn.original_max)
 
                     # Now walk on original model using pruned model's solution
                     time_remain = timelimit - (time.time() - start)
                     if time_remain > 0 and pruned_x_max is not None:
                         model_nn.use_original = True
                         local_x_max, local_max, step_count2, time_consuming2 = single_walk_with_timelimit(model_nn, pruned_x_max, eps,
-                                                                                                         time_remain, max_steps=5)
+                                                                                                         time_remain, max_steps=20)
+                        print("ORIGINAL WALK",step_count2)
+                        print("ORIGINAL MAX", model_nn.original_max)
                     else:
                         # No time left or pruned walk failed
                         model_nn.use_original = True
                         local_x_max = model_nn.original_x_max
                         local_max = model_nn.original_max
+                    # local_x_max = model_nn.original_x_max
+                    # local_max = model_nn.original_max
 
                     # now = time.time() - start
                     # print(f'{valid_start_count} walk done by {now} with {step_count1} steps')
@@ -150,7 +156,9 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
     time_count = time.time() - start
     original_max = model_nn.original_max
     original_x_max = model_nn.original_x_max
+    print(f"Original_max: {model_nn.original_max}")
 
+    model_nn.use_original = False
     if max_ is None or x_max is None:
         store_data({
             'method': 'RW',

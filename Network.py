@@ -42,10 +42,11 @@ class Network(nn.Module):
         import copy
         self.original = copy.deepcopy(self)
 
-        # Apply pruning permanently to self
-        for layer in self.linears:
-            prune.l1_unstructured(layer, name='weight', amount=prune_amount)
-            prune.remove(layer, 'weight')
+        # Apply pruning permanently to self only on the last layer
+        last_layer = self.linears[-1]
+        prune.l1_unstructured(last_layer, name='weight', amount=prune_amount)
+        # Remove pruning reparameterization to make it permanent
+        prune.remove(last_layer, 'weight')
 
         # Track best original model outputs
         self.original_max = float('-inf')
