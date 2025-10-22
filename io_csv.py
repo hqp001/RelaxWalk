@@ -13,6 +13,11 @@ def store_data(data_dict, filename):
         data_dict: Dictionary containing the data for one row
         filename: Name of the CSV file to write to
     """
+    # Create directory if it doesn't exist
+    dir_path = os.path.dirname(filename)
+    if dir_path and not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
     # Create DataFrame with explicit column order
     df = pd.DataFrame([data_dict], columns=COLUMNS)
 

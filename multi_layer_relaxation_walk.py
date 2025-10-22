@@ -46,7 +46,7 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'valid_start_count': None,
             'original_max': None,
             'original_max_time_elapsed': None
-        }, f'RW_experiment_result_{timelimit}.csv')
+        }, f'results/RW_experiment_result_{timelimit}.csv')
         return None, None, None, None, None, None, None
     int_z = get_binary_activations(model_nn, x)
     prob_list = []
@@ -178,7 +178,7 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'valid_start_count': valid_start_count,
             'original_max': original_max,
             'original_max_time_elapsed': original_max_time_elapsed
-        }, f'RW_experiment_result_{timelimit}.csv')
+        }, f'results/RW_experiment_result_{timelimit}.csv')
     else:
         store_data({
             'method': 'RW',
@@ -193,6 +193,6 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'valid_start_count': valid_start_count,
             'original_max': original_max,
             'original_max_time_elapsed': original_max_time_elapsed
-        }, f'RW_experiment_result_{timelimit}.csv')
+        }, f'results/RW_experiment_result_{timelimit}.csv')
     return x_max, max_, first_max, time_count, start_count, valid_start_count, update_list
 
