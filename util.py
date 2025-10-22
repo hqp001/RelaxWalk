@@ -356,7 +356,10 @@ def solve_lp_pre_calc(modelnn, activation_pattern):
 
     # Update original_max by passing x through the network
     if x_new is not None and len(x_new) > 0:
-        modelnn.forward(torch.Tensor(x_new))
+        prev_use_original = modelnn.use_original
+        modelnn.use_original = True
+        max_lp = modelnn.forward(torch.Tensor(x_new)).item()
+        modelnn.use_original = prev_use_original
 
     return max_lp, x_new
 
