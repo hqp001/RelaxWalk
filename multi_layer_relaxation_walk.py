@@ -88,6 +88,7 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
     # Generate a new points in a while loop
     print("START ORIGINAL MAX: ", model_nn.original_max)
     while time.time() - start < timelimit:
+        model_nn.use_original = True
 
         restriction = []
         picked_neurons = []
@@ -131,7 +132,11 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
 
                     # Now walk on original model using pruned model's solution
                     time_remain = timelimit - (time.time() - start)
-                    if time_remain > 0 and pruned_x_max is not None:
+                    if prune_amount == 0:
+                        # If no pruning, skip second walk and use original max directly
+                        local_x_max = model_nn.original_x_max
+                        local_max = model_nn.original_max
+                    elif time_remain > 0 and pruned_x_max is not None:
                         model_nn.use_original = True
                         local_x_max, local_max, step_count2, time_consuming2 = single_walk_with_timelimit(model_nn, pruned_x_max, eps,
                                                                                                          time_remain, max_steps=100)
@@ -139,7 +144,6 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
                         print("ORIGINAL MAX", model_nn.original_max)
                     else:
                         # No time left or pruned walk failed
-                        model_nn.use_original = True
                         local_x_max = model_nn.original_x_max
                         local_max = model_nn.original_max
                     # local_x_max = model_nn.original_x_max

@@ -2,7 +2,7 @@ import pandas as pd
 from multi_layer_relaxation_walk import relaxation_walk_deep
 
 #seed_list = [50, 51, 52, 53, 54]
-seed_list = [52, 53, 54]
+seed_list = [50, 51, 52, 53, 54]
 #input_size_list = [10, 100, 1000]
 input_size_list = [100]
 layer_num_list = [3]
