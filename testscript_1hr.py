@@ -10,7 +10,7 @@ layer_num_list = [3]
 layer_size_list = [100]
 prune_amount_list = [0.0, 0.3, 0.5, 0.8]
 #prune_amount_list = [0.3, 0.5]
-timelimit = 120
+timelimit = 30
 
 walk_eps = 0.01
 pick_bias = 0.05

@@ -2,8 +2,8 @@ import pandas as pd
 import os
 
 # Define column order in ONE place
-COLUMNS = ['method', 'model_size', 'parameters', 'seed', 'prune_amount', 'x_max', 'max_',
-           'first_max', 'time_count', 'start_count', 'valid_start_count', 'original_max', 'update_list']
+COLUMNS = ['method', 'model_size', 'parameters', 'seed', 'prune_amount', 'max_',
+           'first_max', 'time_count', 'start_count', 'valid_start_count', 'original_max', 'original_max_time_elapsed']
 
 def store_data(data_dict, filename):
     """

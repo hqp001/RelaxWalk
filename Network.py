@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import time
 import torch
 import torch.nn as nn
 from torch import relu, sigmoid, tanh, selu
@@ -8,7 +9,7 @@ import torch.nn.utils.prune as prune
 
 class Network(nn.Module):
 
-    def __init__(self, in_size, layer_dims, seed=42, prune_amount=0.2):
+    def __init__(self, in_size, layer_dims, seed=42, prune_amount=0.2, start_time=None):
         # in_size = dimensions of the input
         # layer_dims = dimensions of the output
 
@@ -16,6 +17,9 @@ class Network(nn.Module):
         np.random.seed(seed)
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+
+        # Store start time for tracking updates
+        self.start_time = start_time
 
         super(Network, self).__init__()
 
@@ -51,6 +55,7 @@ class Network(nn.Module):
         # Track best original model outputs
         self.original_max = float('-inf')
         self.original_x_max = None
+        self.original_max_time = None  # Track when original_max was last updated
 
         # Control which model to use
         self.use_original = False
@@ -91,6 +96,9 @@ class Network(nn.Module):
             if original_value > self.original_max:
                 self.original_max = original_value
                 self.original_x_max = x_input if isinstance(x_input, list) else x_input.tolist()
+                # Record timestamp of update if start_time was provided
+                if self.start_time is not None:
+                    self.original_max_time = time.time() - self.start_time
 
         return x
 

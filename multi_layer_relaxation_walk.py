@@ -21,10 +21,9 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
 
     layer_dims = layer_num * [layer_size] + [1]
 
-    model_nn = Network(in_size=input_size, layer_dims=layer_dims, seed=seed, prune_amount=prune_amount)
-    model_nn.use_original = True
-
     start = time.time()
+    model_nn = Network(in_size=input_size, layer_dims=layer_dims, seed=seed, prune_amount=prune_amount, start_time=start)
+    model_nn.use_original = True
     max_ = -1000
     x_max = None
     update_list = []
@@ -40,14 +39,13 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'parameters': [walk_eps, pick_bias],
             'seed': random_seed,
             'prune_amount': prune_amount,
-            'x_max': None,
             'max_': None,
             'first_max': None,
             'time_count': None,
             'start_count': None,
             'valid_start_count': None,
             'original_max': None,
-            'update_list': None
+            'original_max_time_elapsed': None
         }, f'RW_experiment_result_{timelimit}.csv')
         return None, None, None, None, None, None, None
     int_z = get_binary_activations(model_nn, x)
@@ -161,7 +159,9 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
     time_count = time.time() - start
     original_max = model_nn.original_max
     original_x_max = model_nn.original_x_max
+    original_max_time_elapsed = model_nn.original_max_time
     print(f"Original_max: {model_nn.original_max}")
+    print(f"Original_max achieved at elapsed time: {original_max_time_elapsed}")
 
     model_nn.use_original = False
     if max_ is None or x_max is None:
@@ -171,14 +171,13 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'parameters': [walk_eps, pick_bias],
             'seed': random_seed,
             'prune_amount': prune_amount,
-            'x_max': x_max,
             'max_': None,
             'first_max': first_max,
             'time_count': time_count,
             'start_count': start_count,
             'valid_start_count': valid_start_count,
             'original_max': original_max,
-            'update_list': update_list
+            'original_max_time_elapsed': original_max_time_elapsed
         }, f'RW_experiment_result_{timelimit}.csv')
     else:
         store_data({
@@ -187,14 +186,13 @@ def relaxation_walk_deep(input_size, layer_num, layer_size, random_seed, walk_ep
             'parameters': [walk_eps, pick_bias],
             'seed': random_seed,
             'prune_amount': prune_amount,
-            'x_max': x_max,
             'max_': model_nn.forward(torch.FloatTensor(x_max)).item(),
             'first_max': first_max,
             'time_count': time_count,
             'start_count': start_count,
             'valid_start_count': valid_start_count,
             'original_max': original_max,
-            'update_list': update_list
+            'original_max_time_elapsed': original_max_time_elapsed
         }, f'RW_experiment_result_{timelimit}.csv')
     return x_max, max_, first_max, time_count, start_count, valid_start_count, update_list
 
