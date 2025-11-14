@@ -55,7 +55,7 @@ if __name__ == "__main__":
         layer_num=10,
         layer_size=10,
         seed=50,
-        prune_amount=0.5,
+        prune_amount=0,
         time_limit=30,
         output_file="results/test.csv"
     )

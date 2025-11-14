@@ -33,7 +33,7 @@ def solve(network, time_limit, seed):
     model.setParam('Seed', seed)
     model.setParam('MIPFocus', 1)  # Focus on finding feasible solutions quickly
     model.setParam('PoolSearchMode', 1)  # Search for n best solutions
-    model.setParam('PoolSolutions', 10000)  # Store up to 1000 solutions in the pool
+    model.setParam('PoolSolutions', GRB.MAXINT)  # Store up to 1000 solutions in the pool
 
     # Calculate model_size as list of neuron counts per layer [input_size, layer1, layer2, ..., output]
     model_size = [network.in_size] + network.layer_dims
