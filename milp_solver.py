@@ -41,7 +41,8 @@ def solve(network, time_limit, seed):
         'prune_amount': network.prune_amount,
         'max_': float('-inf'),
         'original_max': network.original_max,
-        'original_max_time_elapsed': network.original_max_time if hasattr(network, 'original_max_time') else None
+        'original_max_time_elapsed': network.original_max_time if hasattr(network, 'original_max_time') else None,
+        'time_limit': time_limit
     }
 
     # Create input variables (bounded between 0 and 1)

@@ -18,7 +18,7 @@ input_size_list = [10, 20, 30]
 layer_num_list = [2]
 layer_size_list = [100]
 prune_amount_list = [0.0, 0.5, 0.9]
-time_limit = 120
+time_limit = 60
 
 output_file = "results/MILP_comparison.csv"
 
