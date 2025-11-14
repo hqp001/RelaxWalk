@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import time
+import copy
 import torch
 import torch.nn as nn
 from torch import relu, sigmoid, tanh, selu
@@ -11,7 +12,7 @@ class Network(nn.Module):
 
     def __init__(self, in_size, layer_dims, seed=42, prune_amount=0.2, start_time=None):
         # in_size = dimensions of the input
-        # layer_dims = dimensions of the output
+        # layer_dims = dimensions of the output (including final output dimension)
 
         random.seed(seed)
         np.random.seed(seed)
@@ -20,117 +21,74 @@ class Network(nn.Module):
 
         # Store start time for tracking updates
         self.start_time = start_time
-
         super(Network, self).__init__()
-
         self.layer_dims = layer_dims
-
         self.in_size = in_size
+        self.prune_amount = prune_amount
 
-        self.linears = nn.ModuleList()
-        self.linears.append(nn.Linear(in_size, layer_dims[0]))
-        # contains all of the matrices that serve as our linear functions
-        for input_dim, output_dim in zip(layer_dims, layer_dims[1:]):
-            self.linears.append(nn.Linear(input_dim, output_dim))
-            # weight matrix plus bias vector
+        # Build dense network: input -> hidden layers -> output
+        layers = []
+        in_dim = in_size
+        for dim in layer_dims[:-1]:  # All hidden layers with ReLU activation
+            layers.append(nn.Linear(in_dim, dim))
+            layers.append(nn.ReLU())
+            in_dim = dim
+        # Output layer (last dimension in layer_dims, no activation)
+        layers.append(nn.Linear(in_dim, layer_dims[-1]))
 
-        self.neurons = {}
-        # a dictionary containing each layer's worth of neurons post-activation
-        for index in range(1, len(layer_dims) + 1):
-            # look at each hidden layer
-            self.neurons[f'Hidden Layer {index} Neurons:'] = None
-            # will eventually contain the tensor for all the neurons of that hidden layer post activation
-            # a different set of neurons per sample input
+        self.dense = nn.Sequential(*layers)
 
-        # Store original model before pruning
-        import copy
-        self.original = copy.deepcopy(self)
+        # Create independent copy for sparse model
+        self.sparse = copy.deepcopy(self.dense)
+        parameters_to_prune = [
+            (m, "weight") for m in self.sparse if isinstance(m, torch.nn.Linear)
+        ]
 
-        # Apply pruning permanently to self only on the last layer
-        last_layer = self.linears[-1]
-        prune.l1_unstructured(last_layer, name='weight', amount=prune_amount)
-        # Remove pruning reparameterization to make it permanent
-        prune.remove(last_layer, 'weight')
+        prune.global_unstructured(
+            parameters_to_prune,
+            pruning_method=prune.L1Unstructured,
+            amount=self.prune_amount,
+        )
+
+        for m, _ in parameters_to_prune:
+            prune.remove(m, "weight")
 
         # Track best original model outputs
         self.original_max = float('-inf')
         self.original_x_max = None
         self.original_max_time = None  # Track when original_max was last updated
 
-        # Control which model to use
-        self.use_original = False
-
-    def forward(self, x):
-        x_input = x.clone() if torch.is_tensor(x) else x
-        x = x.type(torch.FloatTensor)
-        x = x.reshape(-1, self.in_size)
-
-        # Choose which model to use
-        linears = self.original.linears if self.use_original else self.linears
-
-        for index, linear in enumerate(linears):
-            if index == len(linears) - 1:
-                x = linear(x)
-            else:
-                x = relu(linear(x))
-            self.neurons[f'Hidden Layer {index + 1} Neurons:'] = x
-
-        # Always track original model output
+    def forward_sparse(self, x):
         with torch.no_grad():
-            if not self.use_original:
-                # Compute original model output directly without recursion
-                x_orig = x_input.clone() if torch.is_tensor(x_input) else x_input
-                x_orig = x_orig.type(torch.FloatTensor)
-                x_orig = x_orig.reshape(-1, self.in_size)
+            # Forward through sparse model
+            sparse_output = self.sparse(x)
 
-                for index, linear in enumerate(self.original.linears):
-                    if index == len(self.original.linears) - 1:
-                        x_orig = linear(x_orig)
-                    else:
-                        x_orig = relu(linear(x_orig))
-                original_output = x_orig
-            else:
-                original_output = x
+            # Also forward through dense model and record original_max
+            dense_output = self.dense(x)
+            dense_max = dense_output.max().item()
 
-            original_value = original_output.item() if original_output.numel() == 1 else original_output.max().item()
-            if original_value > self.original_max:
-                self.original_max = original_value
-                self.original_x_max = x_input if isinstance(x_input, list) else x_input.tolist()
-                # Record timestamp of update if start_time was provided
+            if dense_max > self.original_max:
+                self.original_max = dense_max
+                self.original_x_max = x.clone()
                 if self.start_time is not None:
                     self.original_max_time = time.time() - self.start_time
 
-        return x
+        return sparse_output
 
-    def get_weight_matrix(self):
-        if self.use_original:
-            w = {}
-            for i in range(len(self.layer_dims)):
-                w[i] = self.original.state_dict()['linears.' + str(i) + '.weight']
-            return w
-        else:
-            w = {}
-            for i in range(len(self.layer_dims)):
-                w[i] = self.state_dict()['linears.' + str(i) + '.weight']
-            return w
+    def forward_dense(self, x):
+        with torch.no_grad():
+            # Forward through dense model
+            dense_output = self.dense(x)
 
-    def get_bias_matrix(self):
-        if self.use_original:
-            b = {}
-            for i in range(len(self.layer_dims)):
-                b[i] = self.original.state_dict()['linears.' + str(i) + '.bias']
-            return b
-        else:
-            b = {}
-            for i in range(len(self.layer_dims)):
-                b[i] = self.state_dict()['linears.' + str(i) + '.bias']
-            return b
+            # Record original_max
+            dense_max = dense_output.max().item()
 
-    def get_neurons(self):
-        """
-        Safely access neurons dictionary.
-        This method ensures neurons are accessed through the proper interface
-        and respects the use_original guard in forward().
-        """
-        return self.neurons
+            if dense_max > self.original_max:
+                self.original_max = dense_max
+                self.original_x_max = x.clone()
+                if self.start_time is not None:
+                    self.original_max_time = time.time() - self.start_time
+
+        return dense_output
+
 

@@ -6,12 +6,19 @@ from run_single_experiment import run_experiment
 
 
 # Experiment configuration (matching old testscript_exp.py)
-seed_list = [50, 51, 52, 53, 54]
-input_size_list = [100, 1000]
-layer_num_list = [3, 4, 5]
-layer_size_list = [100, 500]
-prune_amount_list = [0.0, 0.3, 0.5, 0.8]
-time_limit = 600
+# seed_list = [50]
+# input_size_list = [1000, 10000, 100000]
+# layer_num_list = [2, 3]
+# layer_size_list = [100, 1000, 10000]
+# prune_amount_list = [0.0, 0.5, 0.9, 0.95, 0.99, 0.995]
+# time_limit = 600
+
+seed_list = [50]
+input_size_list = [10, 20, 30]
+layer_num_list = [2]
+layer_size_list = [100]
+prune_amount_list = [0.0, 0.5, 0.9]
+time_limit = 120
 
 output_file = "results/MILP_comparison.csv"
 
@@ -46,7 +53,7 @@ def main():
                             )
 
                             print(f"  max_={result['max_']:.4f}, original_max={result['original_max']:.4f}, "
-                                  f"time={result['time_count']:.2f}s")
+                                  f"time={result['solve_time']:.2f}s")
                             print("-" * 80)
 
                         except Exception as e:
