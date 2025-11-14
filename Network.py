@@ -91,4 +91,31 @@ class Network(nn.Module):
 
         return dense_output
 
+    def get_sparse_activations(self, x):
+        """
+        Get the activation pattern (on/off) for each ReLU neuron in the sparse model.
+
+        Args:
+            x: Input tensor
+
+        Returns:
+            list of tensors: Each tensor contains binary values (1=on, 0=off) for neurons in that layer
+        """
+        with torch.no_grad():
+            activations = []
+            current = x
+
+            for layer in self.sparse:
+                if isinstance(layer, torch.nn.Linear):
+                    current = layer(current)
+                elif isinstance(layer, torch.nn.ReLU):
+                    # Store which neurons are active (>= 0 before ReLU)
+                    active = (current >= 0).float()
+                    activations.append(active)
+                    current = layer(current)
+                else:
+                    current = layer(current)
+
+            return activations
+
 

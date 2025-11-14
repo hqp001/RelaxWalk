@@ -31,17 +31,28 @@ def solve(network, time_limit, seed):
     model.setParam('OutputFlag', 0)  # Suppress output
     model.setParam('TimeLimit', time_limit)
     model.setParam('Seed', seed)
+    model.setParam('MIPFocus', 1)  # Focus on finding feasible solutions quickly
+    model.setParam('PoolSearchMode', 1)  # Search for n best solutions
+    model.setParam('PoolSolutions', 10000)  # Store up to 1000 solutions in the pool
+
+    # Calculate model_size as list of neuron counts per layer [input_size, layer1, layer2, ..., output]
+    model_size = [network.in_size] + network.layer_dims
+
+    # Calculate number of non-zero parameters in sparse model
+    non_zero_params = 0
+    for param in network.sparse.parameters():
+        non_zero_params += torch.count_nonzero(param).item()
 
     # Track statistics
     stats = {
         'method': 'gurobi_ml',
-        'model_size': sum(p.numel() for p in network.sparse.parameters()),
-        'parameters': sum(p.numel() for p in network.sparse.parameters()),
+        'model_size': model_size,  # List of neurons per layer
+        'parameters': non_zero_params,  # Count of non-zero parameters
         'seed': seed,
         'prune_amount': network.prune_amount,
         'max_': float('-inf'),
-        'original_max': network.original_max,
-        'original_max_time_elapsed': network.original_max_time if hasattr(network, 'original_max_time') else None,
+        'original_max': float('-inf'),  # Will be updated from network.original_max at the end
+        'original_max_time_elapsed': None,  # Will be updated from network.original_max_time at the end
         'time_limit': time_limit
     }
 
@@ -71,10 +82,9 @@ def solve(network, time_limit, seed):
             # Get the new solution
             x_sol = model.cbGetSolution(input_vars)
 
-            # Evaluate on dense model
-            with torch.no_grad():
-                x_tensor = torch.tensor(x_sol, dtype=torch.float32).reshape(1, -1)
-                network.forward_dense(x_tensor)  # This updates network.original_max automatically
+            # Evaluate on both sparse and dense models (forward_sparse evaluates dense internally)
+            x_tensor = torch.tensor(x_sol, dtype=torch.float32).reshape(1, -1)
+            network.forward_sparse(x_tensor)  # This updates network.original_max automatically
 
     # Optimize with callback
     model.optimize(callback)
@@ -82,17 +92,16 @@ def solve(network, time_limit, seed):
     # Extract results - only record the last (final) maximum value
     if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
         if model.SolCount > 0:
-            # Get the optimal input
+            # Get the optimal input and output from Gurobi
             optimal_x = input_vars.X
+            optimal_y = output_var.X[0]  # This is the sparse model output from Gurobi
 
-            # Evaluate on the dense model (the "true" objective)
-            with torch.no_grad():
-                x_tensor = torch.tensor(optimal_x, dtype=torch.float32).reshape(1, -1)
-                dense_output = network.forward_dense(x_tensor)
-                dense_value = dense_output.item()
+            # Evaluate on both models (forward_sparse evaluates dense internally and updates original_max)
+            x_tensor = torch.tensor(optimal_x, dtype=torch.float32).reshape(1, -1)
+            network.forward_sparse(x_tensor)
 
-            # Record only the final maximum value
-            stats['max_'] = dense_value
+            # Record the sparse model maximum (Gurobi's optimized value)
+            stats['max_'] = optimal_y
             stats['solve_time'] = time.time() - start_time
             stats['sol_count'] = model.SolCount
 
