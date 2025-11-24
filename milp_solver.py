@@ -1,18 +1,19 @@
 """
-MILP Solver for Pruned Model with Dense Evaluation using Gurobi Machine Learning
+MILP Solver for Pruned Model with Dense Evaluation using Custom Gurobi Formulation
 """
 
 import torch
 import time
 import gurobipy as gp
 from gurobipy import GRB
-import gurobi_ml as gml
+from gurobi_lib.torch2gurobi import add_predictor_constr, check_correct_formulation
+from gurobi_lib.GurobiSolver import remove_region_callback, solve_lp_relaxation, get_warm_start_from_relaxation, dense_evaluation_callback
 from Network import Network
 
 
 def solve(network, time_limit, seed):
     """
-    Solve MILP on pruned model and evaluate solution on dense model using Gurobi ML.
+    Solve MILP on pruned model and evaluate solution on dense model using custom Gurobi formulation.
 
     Args:
         network: Network object with both pruned and dense models
@@ -24,16 +25,23 @@ def solve(network, time_limit, seed):
               max_, original_max, original_max_time_elapsed
     """
 
+    relaxed_input = solve_lp_relaxation(network, time_limit=60, seed=seed)
+    print("LP Relaxation input:", relaxed_input)
+
+    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=60, seed=seed)
+    print("Warm start obtained")
+
     start_time = time.time()
 
     # Create Gurobi model
     model = gp.Model("neural_network_optimization")
-    model.setParam('OutputFlag', 0)  # Suppress output
+    model.setParam('OutputFlag', 1)  # Suppress output
     model.setParam('TimeLimit', time_limit)
     model.setParam('Seed', seed)
     model.setParam('MIPFocus', 1)  # Focus on finding feasible solutions quickly
-    model.setParam('PoolSearchMode', 1)  # Search for n best solutions
-    model.setParam('PoolSolutions', GRB.MAXINT)  # Store up to 1000 solutions in the pool
+    model.setParam('LazyConstraints', 1)  # Enable lazy constraints for region removal
+    # model.setParam('PoolSearchMode', 1)  # Search for n best solutions
+    # model.setParam('PoolSolutions', GRB.MAXINT)  # Store up to 1000 solutions in the pool
 
     # Calculate model_size as list of neuron counts per layer [input_size, layer1, layer2, ..., output]
     model_size = [network.in_size] + network.layer_dims
@@ -45,7 +53,7 @@ def solve(network, time_limit, seed):
 
     # Track statistics
     stats = {
-        'method': 'gurobi_ml',
+        'method': 'custom_gurobi',
         'model_size': model_size,  # List of neurons per layer
         'parameters': non_zero_params,  # Count of non-zero parameters
         'seed': seed,
@@ -56,63 +64,59 @@ def solve(network, time_limit, seed):
         'time_limit': time_limit
     }
 
-    # Create input variables (bounded between 0 and 1)
-    input_vars = model.addMVar(network.in_size, lb=0.0, ub=1.0, name="x")
+    # Create input variables (bounded between 0 and 1) with shape (1, in_size) for batch dimension
+    input_vars = model.addMVar((1, network.in_size), lb=0.0, ub=1.0, name="x")
 
     # Create output variable (unbounded for maximization)
-    output_var = model.addMVar(1, lb=-GRB.INFINITY, name="y")
+    output_var = model.addMVar((1, 1), lb=-GRB.INFINITY, name="y")
 
-    # Add the sparse neural network as predictor constraints
+    # Add the sparse neural network as predictor constraints using custom formulation
     # Use network.sparse as the trained model
-    pred_constr = gml.add_predictor_constr(
+    add_predictor_constr(
         model,
-        network.sparse,  # Use the sparse (pruned) model
+        network.sparse,
+        network.dense,
         input_vars,
         output_var
     )
-    pred_constr.print_stats()
 
-    # Set objective: maximize the output
+    print("Verifying formulation correctness...")
+    is_correct = check_correct_formulation(model, network.sparse, input_vars, output_var)
+    if is_correct:
+        print("✓ Formulation verified successfully!")
+    else:
+        print("✗ Warning: Formulation verification failed!")
+        raise ValueError("Formulation verification failed - neural network constraints may be incorrect")
+
+    # Apply warm start from LP relaxation
+    input_vars.Start = warm_start['input_vars']
+    for i, binary_layer in enumerate(model._binary):
+        binary_layer.Start = warm_start['binary_vars'][i]
+    print("Warm start applied to model")
+
+    # Initialize dense evaluation counter
+    model._dense_eval_count = 0
+
     model.setObjective(output_var[0], GRB.MAXIMIZE)
 
-    # Define callback function to evaluate new solutions on dense model
-    def callback(model, where):
-        """Callback to evaluate each new MIP solution on the dense model"""
-        if where == GRB.Callback.MIPSOL:
-            # Get the new solution
-            x_sol = model.cbGetSolution(input_vars)
+    model.optimize(remove_region_callback)
 
-            # Evaluate on both sparse and dense models (forward_sparse evaluates dense internally)
-            x_tensor = torch.tensor(x_sol, dtype=torch.float32).reshape(1, -1)
-            network.forward_sparse(x_tensor)  # This updates network.original_max automatically
-
-    # Optimize with callback
-    model.optimize(callback)
-
-    # Extract results - only record the last (final) maximum value
     if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
         if model.SolCount > 0:
-            # Get the optimal input and output from Gurobi
-            optimal_x = input_vars.X
-            optimal_y = output_var.X[0]  # This is the sparse model output from Gurobi
-
-            # Evaluate on both models (forward_sparse evaluates dense internally and updates original_max)
-            x_tensor = torch.tensor(optimal_x, dtype=torch.float32).reshape(1, -1)
-            network.forward_sparse(x_tensor)
-
-            # Record the sparse model maximum (Gurobi's optimized value)
+            optimal_y = output_var.X[0][0]
             stats['max_'] = optimal_y
             stats['solve_time'] = time.time() - start_time
-            stats['sol_count'] = model.SolCount
-
+            stats['sol_count'] = model._dense_eval_count
+        else:
+            stats['max_'] = float('-inf')
+            stats['solve_time'] = time.time() - start_time
+            stats['sol_count'] = model._dense_eval_count
     else:
-        # No solution found
-        stats['max_'] = network.original_max if network.original_max > float('-inf') else 0.0
+        stats['max_'] = float('-inf')
         stats['solve_time'] = time.time() - start_time
-        stats['sol_count'] = 0
+        stats['sol_count'] = model._dense_eval_count
 
-    # Update original_max tracking
-    stats['original_max'] = network.original_max
-    stats['original_max_time_elapsed'] = network.original_max_time
+    stats['original_max'] = model._original_max
+    stats['original_max_time_elapsed'] = model._original_max_time
 
     return stats
