@@ -5,7 +5,7 @@ import numpy as np
 import gurobipy as gp
 import time
 
-def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y):
+def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y, use_relu_constr3=False):
 
     gurobi_model._binary = []
     gurobi_model._input_vars = x
@@ -22,6 +22,9 @@ def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y):
     gurobi_nodes = {}
 
     sparse_model.graph.print_tabular()
+
+    # Select which ReLU constraint function to use
+    relu_constr_func = add_relu_constr3 if use_relu_constr3 else add_relu_constr
 
     for node in sparse_model.graph.nodes:
 
@@ -49,7 +52,7 @@ def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y):
 
                 input_node = gurobi_nodes[node.args[0].name]
 
-                output_node = add_relu_constr(gurobi_model, input_node, name=node.name)
+                output_node = relu_constr_func(gurobi_model, input_node, name=node.name)
 
                 gurobi_nodes[node.name] = output_node
 
@@ -285,6 +288,44 @@ def add_relu_constr(gurobi_model, input_layer, name):
         gurobi_model.addConstr( (neuron_layer[0][j] == 1) >> (output_layer[0][j] == input_layer[0][j]) )
         gurobi_model.addConstr( output_layer[0][j] >= 0 )
 
+
+    return output_layer
+
+def add_relu_constr3(gurobi_model, input_layer, name):
+    """
+    ReLU constraints using 3 indicator constraints like util.py.
+
+    Variables:
+    - input_layer (g): input to ReLU
+    - output_layer (h): output of ReLU
+    - neuron_layer (z): binary variables
+
+    Constraints (from util.py lines 107-109):
+    - (z == 0) >> (h == 0)
+    - (z == 1) >> (h == g)
+    - (z == 0) >> (g <= 0)
+    """
+    # Assert input shape
+    assert input_layer.shape[0] == 1
+
+    input_shape = input_layer.shape
+
+    # z: binary variables
+    neuron_layer = gurobi_model.addMVar(input_shape, vtype=gp.GRB.BINARY, name=f"neuron_{name}")
+    gurobi_model._binary.append(neuron_layer)
+
+    # h: output layer (ReLU output) - same shape as input
+    output_layer = gurobi_model.addMVar(input_shape, name=name)
+
+    # Assert output has same shape as input
+    assert output_layer.shape == input_layer.shape
+
+    for j in range(input_shape[1]):
+        # g is input_layer[0][j], h is output_layer[0][j], z is neuron_layer[0][j]
+        # Three indicator constraints from util.py:
+        gurobi_model.addConstr((neuron_layer[0][j] == 0) >> (output_layer[0][j] == 0))  # (z == 0) >> (h == 0)
+        gurobi_model.addConstr((neuron_layer[0][j] == 1) >> (output_layer[0][j] == input_layer[0][j]))  # (z == 1) >> (h == g)
+        gurobi_model.addConstr((neuron_layer[0][j] == 0) >> (input_layer[0][j] <= 0))  # (z == 0) >> (g <= 0)
 
     return output_layer
 

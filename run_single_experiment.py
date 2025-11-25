@@ -52,10 +52,10 @@ if __name__ == "__main__":
     # Example usage
     result = run_experiment(
         input_size=1000,
-        layer_num=10,
-        layer_size=100,
+        layer_num=3,
+        layer_size=1000,
         seed=50,
-        prune_amount=0.5,
+        prune_amount=0,
         time_limit=60,
         output_file="results/test.csv"
     )

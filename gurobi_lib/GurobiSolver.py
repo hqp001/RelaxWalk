@@ -24,24 +24,29 @@ def dense_evaluation_callback(model, where):
 
 def lp_relaxation_callback(model, where):
     """
-    Callback to capture the first LP relaxation solution and terminate immediately.
+    Callback to capture the root node LP relaxation solution and terminate immediately.
     Only captures input values, not neuron states.
     """
     if where == gp.GRB.Callback.MIPNODE:
-        status = model.cbGet(gp.GRB.Callback.MIPNODE_STATUS)
+        # Check node count - root node is node 0
+        nodecount = model.cbGet(gp.GRB.Callback.MIPNODE_NODCNT)
 
+        if nodecount > 0:
+            # Root node completed, terminate now
+            model.terminate()
+            return
+
+        # We're at root node, check if LP relaxation is optimal
+        status = model.cbGet(gp.GRB.Callback.MIPNODE_STATUS)
         if status == gp.GRB.OPTIMAL:
             # Capture LP relaxation input values
             model._relaxed_input = model.cbGetNodeRel(model._input_vars)
-            # Terminate immediately after first relaxation
-            model.terminate()
 
-def solve_lp_relaxation(network, time_limit=60, seed=42):
+def solve_lp_relaxation(network, time_limit, seed):
     """
-    Solve LP relaxation independently to get the first relaxed input solution.
+    Solve LP relaxation independently to get the relaxed input solution.
 
-    This creates a fresh MILP formulation, solves until the first LP relaxation
-    is found, captures the input values, and terminates immediately.
+    Uses callback approach from util.py to capture root node LP relaxation.
 
     Args:
         network: Network object with in_size attribute and dense model
@@ -49,8 +54,12 @@ def solve_lp_relaxation(network, time_limit=60, seed=42):
         seed: Random seed (default: 42)
 
     Returns:
-        numpy.ndarray: Input values from LP relaxation, or None if solver fails
+        tuple: (input_solution, solve_time)
+            - input_solution (numpy.ndarray): Input values from LP relaxation
+            - solve_time (float): Time spent solving in seconds
     """
+    start_time = time.time()
+
     # Create independent Gurobi model
     model = gp.Model("lp_relaxation_solver")
     model.setParam('OutputFlag', 0)
@@ -63,23 +72,34 @@ def solve_lp_relaxation(network, time_limit=60, seed=42):
     # Create output variable
     output_var = model.addMVar((1, 1), lb=-gp.GRB.INFINITY, name="y")
 
-    # Add predictor constraints using dense model
+    # Add predictor constraints using dense model with standard add_relu_constr
     add_predictor_constr(model, network.dense, network.dense, input_vars, output_var)
-
-    # Initialize relaxed_input storage
-    model._relaxed_input = None
 
     # Set objective to maximize output
     model.setObjective(output_var[0], gp.GRB.MAXIMIZE)
 
-    # Optimize with LP relaxation callback
+    # Update the model to ensure variables are fully created and accessible
+    model.update()
+
+    # Get the list of input variables for the callback
+    # tolist() returns nested list for 2D MVar, so we need to flatten it
+    input_var_nested = input_vars.tolist()
+    input_var_list = [var for row in input_var_nested for var in row]
+
+    # Store input variables on model for callback access
+    model._input_vars = input_var_list
+    model._relaxed_input = None
+
+    # Optimize with callback to capture root node LP relaxation
     model.optimize(lp_relaxation_callback)
 
-    # Return captured solution
-    if hasattr(model, '_relaxed_input') and model._relaxed_input is not None:
-        return np.array(model._relaxed_input)
-    else:
-        raise RuntimeError("LP relaxation failed to find a solution")
+    # Check if we captured the relaxation solution
+    if model._relaxed_input is None:
+        raise RuntimeError("LP relaxation failed to capture solution")
+
+    solve_time = time.time() - start_time
+
+    return np.array(model._relaxed_input).reshape(1, -1), solve_time
 
 def get_warm_start_from_relaxation(network, relaxed_input, time_limit=60, seed=42):
     """

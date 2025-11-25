@@ -25,18 +25,21 @@ def solve(network, time_limit, seed):
               max_, original_max, original_max_time_elapsed
     """
 
-    relaxed_input = solve_lp_relaxation(network, time_limit=60, seed=seed)
-    print("LP Relaxation input:", relaxed_input)
+    relaxed_input, lp_relax_time = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
+    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s")
 
-    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=60, seed=seed)
+    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=time_limit, seed=seed)
     print("Warm start obtained")
 
     start_time = time.time()
 
+    # Subtract LP relaxation time from the main model's time limit
+    remaining_time_limit = max(10, time_limit - lp_relax_time)
+
     # Create Gurobi model
     model = gp.Model("neural_network_optimization")
     model.setParam('OutputFlag', 1)  # Suppress output
-    model.setParam('TimeLimit', time_limit)
+    model.setParam('TimeLimit', remaining_time_limit)
     model.setParam('Seed', seed)
     model.setParam('MIPFocus', 1)  # Focus on finding feasible solutions quickly
     model.setParam('LazyConstraints', 1)  # Enable lazy constraints for region removal
