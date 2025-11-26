@@ -5,7 +5,7 @@ import numpy as np
 import gurobipy as gp
 import time
 
-def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y, use_relu_constr3=False):
+def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y):
 
     gurobi_model._binary = []
     gurobi_model._input_vars = x
@@ -24,7 +24,7 @@ def add_predictor_constr(gurobi_model, sparse_model, dense_model, x, y, use_relu
     sparse_model.graph.print_tabular()
 
     # Select which ReLU constraint function to use
-    relu_constr_func = add_relu_constr3 if use_relu_constr3 else add_relu_constr
+    relu_constr_func = add_relu_constr
 
     for node in sparse_model.graph.nodes:
 
@@ -328,6 +328,17 @@ def add_relu_constr3(gurobi_model, input_layer, name):
         gurobi_model.addConstr((neuron_layer[0][j] == 0) >> (input_layer[0][j] <= 0))  # (z == 0) >> (g <= 0)
 
     return output_layer
+
+def add_relu_constr_skip(gurobi_model, input_layer, name):
+    """
+    Skip ReLU constraints - just pass through the input without any transformation.
+    This effectively treats the ReLU layer as an identity function.
+
+    Variables:
+    - input_layer: input to ReLU
+    - Returns the input_layer directly without adding any constraints
+    """
+    return input_layer
 
 def add_flatten_constr(gurobi_model, input_layer, module, name):
 

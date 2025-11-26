@@ -16,31 +16,30 @@ def dense_evaluation_callback(model, where):
         with torch.no_grad():
             dense_output = model._dense_network(x_tensor)
             dense_max = dense_output.max().item()
-
+            print(f"DENSE OUTPUT: {dense_max}")
             if dense_max > model._original_max:
                 model._original_max = dense_max
                 model._original_x_max = x_tensor.clone()
                 model._original_max_time = time.time() - model._start_time
 
 def lp_relaxation_callback(model, where):
-    """
-    Callback to capture the root node LP relaxation solution and terminate immediately.
-    Only captures input values, not neuron states.
-    """
-    if where == gp.GRB.Callback.MIPNODE:
-        # Check node count - root node is node 0
-        nodecount = model.cbGet(gp.GRB.Callback.MIPNODE_NODCNT)
+    if where != gp.GRB.Callback.MIPNODE:
+        return
 
-        if nodecount > 0:
-            # Root node completed, terminate now
-            model.terminate()
-            return
+    status = model.cbGet(gp.GRB.Callback.MIPNODE_STATUS)
 
-        # We're at root node, check if LP relaxation is optimal
-        status = model.cbGet(gp.GRB.Callback.MIPNODE_STATUS)
-        if status == gp.GRB.OPTIMAL:
-            # Capture LP relaxation input values
-            model._relaxed_input = model.cbGetNodeRel(model._input_vars)
+    if status in (gp.GRB.OPTIMAL, gp.GRB.INTEGER):
+        # LP relaxation values for your input vars
+        model._relaxed_input = model.cbGetNodeRel(model._input_vars)
+
+        # Compute dense output for the relaxed input
+        x_tensor = torch.tensor(model._relaxed_input, dtype=torch.float32)
+        with torch.no_grad():
+            dense_output = model._dense_network(x_tensor)
+            model._dense_output = dense_output.max().item()
+            print(f"LP RELAXATION DENSE OUTPUT: {model._dense_output}")
+
+        model.terminate()
 
 def solve_lp_relaxation(network, time_limit, seed):
     """
@@ -62,9 +61,10 @@ def solve_lp_relaxation(network, time_limit, seed):
 
     # Create independent Gurobi model
     model = gp.Model("lp_relaxation_solver")
-    model.setParam('OutputFlag', 0)
+    model.setParam('OutputFlag', 1)
     model.setParam('TimeLimit', time_limit)
     model.setParam('Seed', seed)
+    #model.Params.NodeLimit = 0   # stop after root node is processed
 
     # Create input variables (bounded between 0 and 1)
     input_vars = model.addMVar((1, network.in_size), lb=0.0, ub=1.0, name="x")
@@ -72,8 +72,8 @@ def solve_lp_relaxation(network, time_limit, seed):
     # Create output variable
     output_var = model.addMVar((1, 1), lb=-gp.GRB.INFINITY, name="y")
 
-    # Add predictor constraints using dense model with standard add_relu_constr
-    add_predictor_constr(model, network.dense, network.dense, input_vars, output_var)
+    # Add predictor constraints using dense model with skip ReLU constraints (LP relaxation)
+    add_predictor_constr(model, network.dense, network.dense, input_vars, output_var, use_relu_constr_skip=False)
 
     # Set objective to maximize output
     model.setObjective(output_var[0], gp.GRB.MAXIMIZE)
@@ -89,6 +89,7 @@ def solve_lp_relaxation(network, time_limit, seed):
     # Store input variables on model for callback access
     model._input_vars = input_var_list
     model._relaxed_input = None
+    model._dense_output = None
 
     # Optimize with callback to capture root node LP relaxation
     model.optimize(lp_relaxation_callback)
@@ -97,11 +98,16 @@ def solve_lp_relaxation(network, time_limit, seed):
     if model._relaxed_input is None:
         raise RuntimeError("LP relaxation failed to capture solution")
 
+    # Check if we captured the dense output
+    assert model._dense_output is not None, "LP relaxation failed to capture dense output"
+
     solve_time = time.time() - start_time
 
-    return np.array(model._relaxed_input).reshape(1, -1), solve_time
+    print(f"LP Relaxation completed - Dense output: {model._dense_output}, Solve time: {solve_time:.4f}s")
 
-def get_warm_start_from_relaxation(network, relaxed_input, time_limit=60, seed=42):
+    return np.array(model._relaxed_input).reshape(1, -1), solve_time, model._dense_output
+
+def get_warm_start_from_relaxation(network, relaxed_input, time_limit, seed):
     """
     Fix relaxed input in sparse model and solve to get integer-feasible solution for warm start.
 
@@ -142,11 +148,11 @@ def get_warm_start_from_relaxation(network, relaxed_input, time_limit=60, seed=4
     if model.status != gp.GRB.OPTIMAL or model.SolCount == 0:
         raise RuntimeError(f"Warm start solver failed with status {model.status}")
 
-    # Extract all variable values
     warm_start = {
         'input_vars': input_vars.X,
         'binary_vars': [binary_layer.X for binary_layer in model._binary]
     }
+    print(f"WARM START OUTPUT: {output_var.X}")
     return warm_start
 
 def remove_region_callback(model, where):
@@ -159,7 +165,7 @@ def remove_region_callback(model, where):
         with torch.no_grad():
             dense_output = model._dense_network(x_tensor)
             dense_max = dense_output.max().item()
-
+            print(f"DENSE OUTPUT: {dense_max}")
             if dense_max > model._original_max:
                 model._original_max = dense_max
                 model._original_x_max = x_tensor.clone()

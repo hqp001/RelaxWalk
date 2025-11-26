@@ -10,7 +10,7 @@ import torch.nn.utils.prune as prune
 
 class Network(nn.Module):
 
-    def __init__(self, in_size, layer_dims, seed=42, prune_amount=0.2, start_time=None):
+    def __init__(self, in_size, layer_dims, seed, prune_amount=0.2, start_time=None):
         # in_size = dimensions of the input
         # layer_dims = dimensions of the output (including final output dimension)
 

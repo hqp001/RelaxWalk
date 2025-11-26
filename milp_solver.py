@@ -25,8 +25,8 @@ def solve(network, time_limit, seed):
               max_, original_max, original_max_time_elapsed
     """
 
-    relaxed_input, lp_relax_time = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
-    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s")
+    relaxed_input, lp_relax_time, lp_dense_output = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
+    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {lp_dense_output}")
 
     warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=time_limit, seed=seed)
     print("Warm start obtained")
@@ -64,7 +64,8 @@ def solve(network, time_limit, seed):
         'max_': float('-inf'),
         'original_max': float('-inf'),  # Will be updated from network.original_max at the end
         'original_max_time_elapsed': None,  # Will be updated from network.original_max_time at the end
-        'time_limit': time_limit
+        'time_limit': time_limit,
+        'lp_dense_output': lp_dense_output
     }
 
     # Create input variables (bounded between 0 and 1) with shape (1, in_size) for batch dimension
@@ -102,7 +103,8 @@ def solve(network, time_limit, seed):
 
     model.setObjective(output_var[0], GRB.MAXIMIZE)
 
-    model.optimize(remove_region_callback)
+    model.optimize(dense_evaluation_callback)
+    #model.optimize(remove_region_callback)
 
     if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
         if model.SolCount > 0:
