@@ -53,10 +53,10 @@ if __name__ == "__main__":
     result = run_experiment(
         input_size=1000,
         layer_num=2,
-        layer_size=1000,
+        layer_size=100,
         seed=51,
-        prune_amount=0.5,
-        time_limit=600,
+        prune_amount=0,
+        time_limit=30,
         output_file="results/test.csv"
     )
     print(f"Result: {result}")

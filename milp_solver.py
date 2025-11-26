@@ -25,8 +25,8 @@ def solve(network, time_limit, seed):
               max_, original_max, original_max_time_elapsed
     """
 
-    relaxed_input, lp_relax_time, lp_dense_output = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
-    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {lp_dense_output}")
+    relaxed_input, lp_relax_time, first_solution = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
+    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {first_solution}")
 
     warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=time_limit, seed=seed)
     print("Warm start obtained")
@@ -65,7 +65,7 @@ def solve(network, time_limit, seed):
         'original_max': float('-inf'),  # Will be updated from network.original_max at the end
         'original_max_time_elapsed': None,  # Will be updated from network.original_max_time at the end
         'time_limit': time_limit,
-        'lp_dense_output': lp_dense_output
+        'first_solution': first_solution
     }
 
     # Create input variables (bounded between 0 and 1) with shape (1, in_size) for batch dimension

@@ -73,7 +73,7 @@ def solve_lp_relaxation(network, time_limit, seed):
     output_var = model.addMVar((1, 1), lb=-gp.GRB.INFINITY, name="y")
 
     # Add predictor constraints using dense model with skip ReLU constraints (LP relaxation)
-    add_predictor_constr(model, network.dense, network.dense, input_vars, output_var, use_relu_constr_skip=False)
+    add_predictor_constr(model, network.dense, network.dense, input_vars, output_var)
 
     # Set objective to maximize output
     model.setObjective(output_var[0], gp.GRB.MAXIMIZE)
