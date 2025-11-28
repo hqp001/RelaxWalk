@@ -39,7 +39,9 @@ def lp_relaxation_callback(model, where):
             model._dense_output = dense_output.max().item()
             print(f"LP RELAXATION DENSE OUTPUT: {model._dense_output}")
 
-        model.terminate()
+        nodecnt = model.cbGet(gp.GRB.Callback.MIPNODE_NODCNT)
+        if nodecnt > 0:
+            model.terminate()
 
 def solve_lp_relaxation(network, time_limit, seed):
     """

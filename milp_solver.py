@@ -25,16 +25,17 @@ def solve(network, time_limit, seed):
               max_, original_max, original_max_time_elapsed
     """
 
-    relaxed_input, lp_relax_time, first_solution = solve_lp_relaxation(network, time_limit=time_limit, seed=seed)
+    relaxed_input, lp_relax_time, first_solution = solve_lp_relaxation(network, time_limit=120, seed=seed)
     print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {first_solution}")
 
-    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=time_limit, seed=seed)
+    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=120, seed=seed)
     print("Warm start obtained")
 
     start_time = time.time()
 
     # Subtract LP relaxation time from the main model's time limit
-    remaining_time_limit = max(10, time_limit - lp_relax_time)
+    #remaining_time_limit = max(10, time_limit - lp_relax_time)
+    remaining_time_limit = time_limit
 
     # Create Gurobi model
     model = gp.Model("neural_network_optimization")
@@ -103,8 +104,8 @@ def solve(network, time_limit, seed):
 
     model.setObjective(output_var[0], GRB.MAXIMIZE)
 
-    model.optimize(dense_evaluation_callback)
-    #model.optimize(remove_region_callback)
+    #model.optimize(dense_evaluation_callback)
+    model.optimize(remove_region_callback)
 
     if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
         if model.SolCount > 0:
