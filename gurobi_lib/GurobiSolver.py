@@ -22,23 +22,19 @@ def dense_evaluation_callback(model, where):
                 model._original_x_max = x_tensor.clone()
                 model._original_max_time = time.time() - model._start_time
 
-def lp_relaxation_callback(model, where):
+def lp_relaxation_callback(model, where) -> None:
     if where != gp.GRB.Callback.MIPNODE:
         return
-
     status = model.cbGet(gp.GRB.Callback.MIPNODE_STATUS)
-
     if status in (gp.GRB.OPTIMAL, gp.GRB.INTEGER):
-        # LP relaxation values for your input vars
-        model._relaxed_input = model.cbGetNodeRel(model._input_vars)
-
-        # Compute dense output for the relaxed input
-        x_tensor = torch.tensor(model._relaxed_input, dtype=torch.float32)
+        candidate_relaxed = model.cbGetNodeRel(model._input_vars)
+        x_tensor = torch.tensor(candidate_relaxed, dtype=torch.float32)
         with torch.no_grad():
-            dense_output = model._dense_network(x_tensor)
-            model._dense_output = dense_output.max().item()
-            print(f"LP RELAXATION DENSE OUTPUT: {model._dense_output}")
-
+            candidate_output = model._dense_network(x_tensor).max().item()
+        if model._dense_output == None or candidate_output > model._dense_output:
+            model._dense_output = candidate_output
+            model._relaxed_input = candidate_relaxed
+        print(f"LP RELAXATION DENSE OUTPUT: {model._dense_output}")
         nodecnt = model.cbGet(gp.GRB.Callback.MIPNODE_NODCNT)
         if nodecnt > 0:
             model.terminate()

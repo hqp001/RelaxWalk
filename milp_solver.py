@@ -28,8 +28,8 @@ def solve(network, time_limit, seed):
     relaxed_input, lp_relax_time, first_solution = solve_lp_relaxation(network, time_limit=120, seed=seed)
     print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {first_solution}")
 
-    warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=120, seed=seed)
-    print("Warm start obtained")
+    # warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=120, seed=seed)
+    # print("Warm start obtained")
 
     start_time = time.time()
 
@@ -94,10 +94,10 @@ def solve(network, time_limit, seed):
         raise ValueError("Formulation verification failed - neural network constraints may be incorrect")
 
     # Apply warm start from LP relaxation
-    input_vars.Start = warm_start['input_vars']
-    for i, binary_layer in enumerate(model._binary):
-        binary_layer.Start = warm_start['binary_vars'][i]
-    print("Warm start applied to model")
+    # input_vars.Start = warm_start['input_vars']
+    # for i, binary_layer in enumerate(model._binary):
+    #     binary_layer.Start = warm_start['binary_vars'][i]
+    # print("Warm start applied to model")
 
     # Initialize dense evaluation counter
     model._dense_eval_count = 0
