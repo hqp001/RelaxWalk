@@ -51,9 +51,9 @@ def run_experiment(input_size, layer_num, layer_size, seed, prune_amount, time_l
 if __name__ == "__main__":
     # Example usage
     result = run_experiment(
-        input_size=1000,
-        layer_num=2,
-        layer_size=100,
+        input_size=10000,
+        layer_num=3,
+        layer_size=1000,
         seed=51,
         prune_amount=0,
         time_limit=30,
