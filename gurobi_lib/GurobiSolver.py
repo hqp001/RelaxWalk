@@ -92,14 +92,12 @@ def solve_lp_relaxation(network, time_limit, seed):
     # Optimize with callback to capture root node LP relaxation
     model.optimize(lp_relaxation_callback)
 
-    # Check if we captured the relaxation solution
-    if model._relaxed_input is None:
-        raise RuntimeError("LP relaxation failed to capture solution")
-
-    # Check if we captured the dense output
-    assert model._dense_output is not None, "LP relaxation failed to capture dense output"
-
     solve_time = time.time() - start_time
+
+    # Return None values if no solution was captured
+    if model._relaxed_input is None or model._dense_output is None:
+        print(f"LP Relaxation failed to capture solution - Solve time: {solve_time:.4f}s")
+        return None, solve_time, None
 
     print(f"LP Relaxation completed - Dense output: {model._dense_output}, Solve time: {solve_time:.4f}s")
 
