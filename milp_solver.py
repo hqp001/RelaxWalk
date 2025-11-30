@@ -28,12 +28,12 @@ def solve(network, time_limit, seed):
     relaxed_input, lp_relax_time, first_solution = solve_lp_relaxation(network, time_limit=120, seed=seed)
 
     # Check if LP relaxation found a solution
-    if relaxed_input is not None:
-        print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {first_solution}")
-        # warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=120, seed=seed)
-        # print("Warm start obtained")
-    else:
-        print(f"LP Relaxation failed to find solution, Time: {lp_relax_time:.2f}s - continuing without warm start")
+    #if relaxed_input is not None:
+    #    print(f"LP Relaxation input: {relaxed_input}, Time: {lp_relax_time:.2f}s, Dense output: {first_solution}")
+    #    # warm_start = get_warm_start_from_relaxation(network, relaxed_input, time_limit=120, seed=seed)
+    #    # print("Warm start obtained")
+    #else:
+    #    print(f"LP Relaxation failed to find solution, Time: {lp_relax_time:.2f}s - continuing without warm start")
 
     start_time = time.time()
 
@@ -47,9 +47,9 @@ def solve(network, time_limit, seed):
     model.setParam('TimeLimit', remaining_time_limit)
     model.setParam('Seed', seed)
     model.setParam('MIPFocus', 1)  # Focus on finding feasible solutions quickly
-    model.setParam('LazyConstraints', 1)  # Enable lazy constraints for region removal
-    # model.setParam('PoolSearchMode', 1)  # Search for n best solutions
-    # model.setParam('PoolSolutions', GRB.MAXINT)  # Store up to 1000 solutions in the pool
+    #model.setParam('LazyConstraints', 1)  # Enable lazy constraints for region removal
+    model.setParam('PoolSearchMode', 1)  # Search for n best solutions
+    model.setParam('PoolSolutions', GRB.MAXINT)  # Store up to 1000 solutions in the pool
 
     # Calculate model_size as list of neuron counts per layer [input_size, layer1, layer2, ..., output]
     model_size = [network.in_size] + network.layer_dims
@@ -61,7 +61,7 @@ def solve(network, time_limit, seed):
 
     # Track statistics
     stats = {
-        'method': 'custom_gurobi',
+        'method': 'no_warm_start_dense_passing',
         'model_size': model_size,  # List of neurons per layer
         'parameters': non_zero_params,  # Count of non-zero parameters
         'seed': seed,
@@ -109,8 +109,8 @@ def solve(network, time_limit, seed):
 
     model.setObjective(output_var[0], GRB.MAXIMIZE)
 
-    #model.optimize(dense_evaluation_callback)
-    model.optimize(remove_region_callback)
+    model.optimize(dense_evaluation_callback)
+    #model.optimize(remove_region_callback)
 
     if model.status == GRB.OPTIMAL or model.status == GRB.TIME_LIMIT:
         if model.SolCount > 0:

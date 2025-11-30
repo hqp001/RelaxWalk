@@ -1,0 +1,2 @@
+method,model_size,parameters,seed,prune_amount,max_,original_max,original_max_time_elapsed,solve_time,sol_count,time_limit,first_solution
+no_warm_start_dense_passing,"[1000, 100, 100, 100, 1]",6306,51,0.95,0.08434040918100451,0.09761729836463928,0.46147680282592773,0.47417306900024414,2,600,0.38343125581741333

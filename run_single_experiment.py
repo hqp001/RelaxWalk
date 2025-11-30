@@ -27,7 +27,8 @@ def run_experiment(input_size, layer_num, layer_size, seed, prune_amount, time_l
 
     # Create layer dimensions list: [layer_size, layer_size, ..., 1]
     # layer_num hidden layers of layer_size, then output layer of size 1
-    layer_dims = [layer_size] * layer_num + [1]
+    # layer_dims = [layer_size] * layer_num + [1]
+    layer_dims = [10000, 1000, 100, 10, 1]
 
     # Initialize Network with start time tracking
     start_time = time.time()
@@ -51,12 +52,12 @@ def run_experiment(input_size, layer_num, layer_size, seed, prune_amount, time_l
 if __name__ == "__main__":
     # Example usage
     result = run_experiment(
-        input_size=10000,
-        layer_num=3,
-        layer_size=1000,
-        seed=51,
+        input_size=0,
+        layer_num=0,
+        layer_size=0,
+        seed=50,
         prune_amount=0,
-        time_limit=30,
-        output_file="results/test.csv"
+        time_limit=600,
+        output_file="results/custom.csv"
     )
     print(f"Result: {result}")
