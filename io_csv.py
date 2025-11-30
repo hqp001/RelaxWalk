@@ -3,7 +3,7 @@ import os
 
 # Define column order in ONE place
 COLUMNS = ['method', 'model_size', 'parameters', 'seed', 'prune_amount', 'max_',
-           'original_max', 'original_max_time_elapsed', 'solve_time', 'sol_count', 'time_limit', 'first_solution']
+           'original_max', 'original_max_time_elapsed', 'solve_time', 'sol_count', 'time_limit', 'first_solution', 'slurm_array_id']
 
 def store_data(data_dict, filename):
     """
